@@ -7,10 +7,10 @@ webAppDirName = 'WebContent'    // 设置 WebApp 根目录
 sourceSets {
     main {
         java {
-            srcDir 'src'
+            srcDir 'src/main/java'
         }
         resources {
-            srcDir 'resources'
+            srcDir 'src/main/resources'
         }
     }
 }
@@ -21,7 +21,7 @@ repositories {
 }
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
-String springVersion = '4.1.1.RELEASE'
+String springVersion = '4.1.6.RELEASE'
 
 configurations.all {
 	resolutionStrategy.eachDependency { DependencyResolveDetails details ->
