@@ -19,17 +19,38 @@ repositories {
     mavenLocal()
     mavenCentral()
 }
+
+configurations {
+    mybatisGenerator
+}
+
+// 读取config文件夹中对应的配置文件
+ext{
+    def prop = new Properties();
+    file("src/main/resources/org/gradle/jdbc-mysql.properties")
+    .withInputStream {
+        prop.load(it)
+    }
+    file("src/main/resources/org/gradle/gradle.properties")
+    .withInputStream {
+        prop.load(it)
+    }
+    prop.each {
+        project.extensions.add("$it.key",it.value);
+    }
+}
+
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
 String springVersion = '4.1.6.RELEASE'
 
-configurations.all {
+/*configurations.all {
 	resolutionStrategy.eachDependency { DependencyResolveDetails details ->
 		if (details.requested.group == 'org.springframework') {
 			details.useVersion springVersion
 		}
 	}
-}
+}*/
 
 dependencies {
 
@@ -83,6 +104,9 @@ dependencies {
 	testRuntime "org.objenesis:objenesis:1.2"
 	testCompile 'org.springframework:spring-test:' + springVersion
 	testRuntime 'com.jayway.jsonpath:json-path:0.8.1'
+	compile group: 'org.apache.ibatis', name: 'ibatis-core', version: '3.0'
+    mybatisGenerator 'org.mybatis.generator:mybatis-generator-core:1.3.2'
+    mybatisGenerator 'mysql:mysql-connector-java:5.1.38'
 }
 
 
@@ -94,4 +118,42 @@ test {
 	testLogging {
 	events "passed", "skipped", "failed"
 	}
+}
+
+task mybatisGenerate << {
+    ant.properties['targetProject'] = projectDir.path
+    //ant.properties['jarDirection'] = project['jdbc.jarDirection']
+    ant.properties['driverClass'] = project['jdbc.driverClassName']
+    ant.properties['connectionURL'] = project['jdbc.url']
+    ant.properties['userId'] = project['jdbc.user']
+    ant.properties['password'] = project['jdbc.pass']
+    ant.properties['src_main_java'] = sourceSets.main.java.srcDirs[0].path
+    ant.properties['src_main_resources'] = sourceSets.main.resources.srcDirs[0].path
+    ant.properties['modelPackage'] = project['modelPackage']
+    ant.properties['mapperPackage'] = project['mapperPackage']
+    ant.properties['sqlMapperPackage'] = project['sqlMapperPackage']
+
+    ant.taskdef(
+            name: 'mbgenerator',
+            classname: 'org.mybatis.generator.ant.GeneratorAntTask',
+            classpath: configurations.mybatisGenerator.asPath
+    )
+
+    ant.mbgenerator(overwrite: true,
+            configfile: '${basedir}/src/main/resources/generatorConfig.xml',
+            verbose: true) {
+        propertyset {
+            propertyref(name: 'targetProject')
+            //propertyref(name: 'jarDirection')
+            propertyref(name: 'userId')
+            propertyref(name: 'driverClass')
+            propertyref(name: 'connectionURL')
+            propertyref(name: 'password')
+            propertyref(name: 'src_main_java')
+            propertyref(name: 'src_main_resources')
+            propertyref(name: 'modelPackage')
+            propertyref(name: 'mapperPackage')
+            propertyref(name: 'sqlMapperPackage')
+        }
+    }
 }
